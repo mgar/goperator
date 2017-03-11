@@ -1,0 +1,7 @@
+.idea/
+/.buildpath
+/.project
+
+goperator
+/vendor/*
+/ssh-keys/*
