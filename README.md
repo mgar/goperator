@@ -17,7 +17,7 @@ To run goperator is very important that all your EC2 instances have the followin
 - *component*
 - *environment*
 
-all the other tags such as _service_ and _working_version_ are optional.
+All the other tags such as _service_ and _working_version_ are optional.
 
 PEM files to allow ssh access to those instances will have the format `<environment>-<component>.pem` and should be stored within the `ssh-keys` folder.
 
