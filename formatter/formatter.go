@@ -10,7 +10,7 @@ import (
 // Ec2ToTable : converts ec2.DescribeInstancesOutput to table
 func Ec2ToTable(resp *ec2.DescribeInstancesOutput) {
 	data := [][]string{}
-	var workingVersion, asg string
+	var workingVersion, asg, publicIP, service string
 
 	for idx := range resp.Reservations {
 		for _, inst := range resp.Reservations[idx].Instances {
@@ -20,15 +20,23 @@ func Ec2ToTable(resp *ec2.DescribeInstancesOutput) {
 					workingVersion = *keys.Value
 				case "aws:autoscaling:groupName":
 					asg = *keys.Value
+				case "service":
+					service = *keys.Value
 				}
 			}
+			if inst.PublicIpAddress != nil {
+				publicIP = *inst.PublicIpAddress
+			}
+
 			data = append(data, []string{
 				*inst.InstanceId,
-				*inst.PublicIpAddress,
+				publicIP,
 				*inst.PrivateIpAddress,
 				*inst.InstanceType,
 				workingVersion,
+				service,
 				asg,
+				*inst.State.Name,
 			})
 		}
 	}
@@ -39,7 +47,9 @@ func Ec2ToTable(resp *ec2.DescribeInstancesOutput) {
 		"Internal IP",
 		"Instance Type",
 		"Working Version",
+		"Service",
 		"Auto Scaling group",
+		"Instance State",
 	})
 
 	for _, v := range data {

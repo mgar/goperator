@@ -10,8 +10,15 @@ import (
 
 // NewEc2Client : Open new Ec2 session
 func NewEc2Client() (*session.Session, *ec2.EC2) {
+	region := os.Getenv("AWS_REGION")
+
+	// Set default region if none has been selected
+	if region == "" {
+		region = "us-east-1"
+	}
+
 	awsCfg := &aws.Config{
-		Region: aws.String(os.Getenv("AWS_REGION")),
+		Region: aws.String(region),
 	}
 	s := session.New(awsCfg)
 	ec2client := ec2.New(s)

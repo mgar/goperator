@@ -5,3 +5,5 @@
 goperator
 /vendor/*
 /ssh-keys/*
+pkg
+bin
