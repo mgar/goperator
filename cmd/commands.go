@@ -11,6 +11,7 @@ var cli = &cobra.Command{
 func Run() {
 	cli.AddCommand(cmdListInstances)
 	cli.AddCommand(cmdSSHInstance)
+	cli.AddCommand(execCommandInInstance)
 
 	cli.Execute()
 }
