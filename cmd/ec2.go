@@ -18,21 +18,24 @@ import (
 var session, ec2Client = client.NewEc2Client()
 
 var cmdListInstances = &cobra.Command{
-	Use:  "list [environment] [component]",
-	Long: "List EC2 instances",
-	Run:  listInstances,
+	Use:   "list [environment] [component]",
+	Long:  "List EC2 instances based on [environment] and [component] tags",
+	Short: "List EC2 instances",
+	Run:   listInstances,
 }
 
 var cmdSSHInstance = &cobra.Command{
-	Use:  "ssh [instance-id]",
-	Long: "ssh into an EC2 Instance given the instance ID.",
-	Run:  sshInstance,
+	Use:   "ssh [instance-id]",
+	Long:  "ssh into an EC2 Instance given the its [instance-id]",
+	Short: "SSH into an EC2 instance",
+	Run:   sshInstance,
 }
 
 var execCommandInInstance = &cobra.Command{
-	Use:  "exec [instance-id ...]  [command]",
-	Long: "Execute a command on one or a given number of EC2 instances.",
-	Run:  executeCommand,
+	Use:   "exec [instance-id ...]  [command]",
+	Long:  "Execute a command on one or a given number of EC2 instances given [instance-id ...]",
+	Short: "Execute a command on one or many EC2 instances",
+	Run:   executeCommand,
 }
 
 func listInstances(cmd *cobra.Command, args []string) {
