@@ -26,9 +26,23 @@ var cmdListInstances = &cobra.Command{
 
 var cmdSSHInstance = &cobra.Command{
 	Use:   "ssh [instance-id]",
-	Long:  "ssh into an EC2 Instance given the its [instance-id]",
+	Long:  "SSH into an EC2 Instance given the its [instance-id]",
 	Short: "SSH into an EC2 instance",
 	Run:   sshInstance,
+}
+
+var cmdStopInstance = &cobra.Command{
+	Use:   "stop [instance-id]",
+	Long:  "Stop one or more EC2 instances given [instance-id ...]",
+	Short: "Stop one or many EC2 instances",
+	Run:   stopInstance,
+}
+
+var cmdStartInstance = &cobra.Command{
+	Use:   "start [instance-id]",
+	Long:  "Start one or more EC2 instances given [instance-id ...]",
+	Short: "Start one or many EC2 instances",
+	Run:   startInstance,
 }
 
 var execCommandInInstance = &cobra.Command{
@@ -62,8 +76,9 @@ func listInstances(cmd *cobra.Command, args []string) {
 				},
 			},
 			{
-				Name:   aws.String("instance-state-name"),
-				Values: []*string{aws.String("running"), aws.String("stopped")},
+				Name: aws.String("instance-state-name"),
+				Values: []*string{aws.String("running"), aws.String("stopped"), aws.String("shutting-down"),
+					aws.String("stopping"), aws.String("pending")},
 			},
 		},
 	}
@@ -125,6 +140,64 @@ func sshInstance(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
+	}
+}
+
+func stopInstance(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		fmt.Println("You need to specify [instance-id ...]")
+		os.Exit(1)
+	}
+	instances := []*string{}
+	for inst := range args {
+		instances = append(instances, &args[inst])
+	}
+
+	params := &ec2.StopInstancesInput{
+		DryRun:      aws.Bool(false),
+		InstanceIds: instances,
+	}
+
+	resp, err := ec2Client.StopInstances(params)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	for idx := range resp.StoppingInstances {
+		if *resp.StoppingInstances[idx].PreviousState.Name != "running" {
+			fmt.Printf("Instance %s in not running. It can't be stopped.\n", *resp.StoppingInstances[idx].InstanceId)
+		} else {
+			fmt.Printf("Stopping instance: %s\n", *resp.StoppingInstances[idx].InstanceId)
+		}
+	}
+}
+
+func startInstance(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		fmt.Println("You need to specify [instance-id ...]")
+		os.Exit(1)
+	}
+
+	instances := []*string{}
+	for inst := range args {
+		instances = append(instances, &args[inst])
+	}
+
+	params := &ec2.StartInstancesInput{
+		DryRun:      aws.Bool(false),
+		InstanceIds: instances,
+	}
+
+	resp, err := ec2Client.StartInstances(params)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	for idx := range resp.StartingInstances {
+		if *resp.StartingInstances[idx].CurrentState.Name == *resp.StartingInstances[idx].PreviousState.Name {
+			fmt.Printf("Instance %s is already running. Skipping...\n", *resp.StartingInstances[idx].InstanceId)
+		} else {
+			fmt.Printf("Starting instance: %s\n", *resp.StartingInstances[idx].InstanceId)
+		}
 	}
 }
 

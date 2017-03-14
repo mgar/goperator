@@ -6,5 +6,6 @@
 goperator
 /vendor/*
 /ssh-keys/*
+!/ssh-keys/.gitkeep
 pkg
 bin
