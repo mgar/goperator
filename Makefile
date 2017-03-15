@@ -46,3 +46,7 @@ release: build
 	@ go get github.com/tcnksm/ghr
 	@ echo "-> Publishing $(BINARY) to GitHub..."
 	@ ghr -u mgar $(VERSION) pkg
+
+.PHONE: tests
+tests:
+	@ go test -v $(shell glide novendor) -cover -covermode=atomic -parallel=$(shell getconf _NPROCESSORS_ONLN)

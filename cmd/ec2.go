@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var session, ec2Client = client.NewEc2Client()
+var ec2Client = client.NewEc2Client()
 
 var cmdListInstances = &cobra.Command{
 	Use:   "list [environment] [component]",
@@ -148,10 +148,8 @@ func stopInstance(cmd *cobra.Command, args []string) {
 		fmt.Println("You need to specify [instance-id ...]")
 		os.Exit(1)
 	}
-	instances := []*string{}
-	for inst := range args {
-		instances = append(instances, &args[inst])
-	}
+
+	instances := stringsSliceToStringPointersSlice(args)
 
 	params := &ec2.StopInstancesInput{
 		DryRun:      aws.Bool(false),
@@ -178,10 +176,7 @@ func startInstance(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	instances := []*string{}
-	for inst := range args {
-		instances = append(instances, &args[inst])
-	}
+	instances := stringsSliceToStringPointersSlice(args)
 
 	params := &ec2.StartInstancesInput{
 		DryRun:      aws.Bool(false),
@@ -212,11 +207,8 @@ func executeCommand(cmd *cobra.Command, args []string) {
 
 	command := args[len(args)-1]
 	args = args[:len(args)-1]
-	instancesIDs := []*string{}
 
-	for inst := range args {
-		instancesIDs = append(instancesIDs, &args[inst])
-	}
+	instances := stringsSliceToStringPointersSlice(args)
 
 	params := &ec2.DescribeInstancesInput{
 		DryRun: aws.Bool(false),
@@ -227,7 +219,7 @@ func executeCommand(cmd *cobra.Command, args []string) {
 			},
 			{
 				Name:   aws.String("instance-id"),
-				Values: instancesIDs,
+				Values: instances,
 			},
 		},
 	}
@@ -320,4 +312,15 @@ func connectSSH(environment, component, IP string) error {
 	}
 
 	return nil
+}
+
+func stringsSliceToStringPointersSlice(stringsSlice []string) (stringsPointersSlice []*string) {
+
+	stringsPointersSlice = []*string{}
+
+	for item := range stringsSlice {
+		stringsPointersSlice = append(stringsPointersSlice, &stringsSlice[item])
+	}
+
+	return stringsPointersSlice
 }

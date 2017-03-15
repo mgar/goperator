@@ -8,3 +8,4 @@ import:
   - aws
   - service/ec2
   - aws/session
+  - aws/ec2

@@ -1,8 +1,8 @@
-hash: 5d7d3c1c8e9c51e738b09299f255b2f0ca2568b559d813a94965b29b0e0f2ebb
-updated: 2017-03-11T15:59:30.949164433+01:00
+hash: 37d8471a5471745247b7b769a95e8e0b6ae2bf05c8b2530da3129d7a602fd028
+updated: 2017-03-15T12:14:21.798098248+01:00
 imports:
 - name: github.com/aws/aws-sdk-go
-  version: 819b71cf8430e434c1eee7e7e8b0f2b8870be899
+  version: 695fe24acaf9afe80b0ce261d4637f42ba0b4c7d
   subpackages:
   - aws
   - aws/awserr
@@ -15,6 +15,7 @@ imports:
   - aws/credentials/endpointcreds
   - aws/credentials/stscreds
   - aws/defaults
+  - aws/ec2
   - aws/ec2metadata
   - aws/endpoints
   - aws/request
