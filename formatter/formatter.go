@@ -9,8 +9,16 @@ import (
 
 // Ec2ToTable : converts ec2.DescribeInstancesOutput to table
 func Ec2ToTable(resp *ec2.DescribeInstancesOutput) {
+
 	data := [][]string{}
-	var workingVersion, asg, publicIP, service string
+
+	var (
+		workingVersion string
+		asg            string
+		publicIP       string
+		service        string
+		privateIP      string
+	)
 
 	for idx := range resp.Reservations {
 		for _, inst := range resp.Reservations[idx].Instances {
@@ -27,11 +35,14 @@ func Ec2ToTable(resp *ec2.DescribeInstancesOutput) {
 			if inst.PublicIpAddress != nil {
 				publicIP = *inst.PublicIpAddress
 			}
+			if inst.PrivateIpAddress != nil {
+				privateIP = *inst.PrivateIpAddress
+			}
 
 			data = append(data, []string{
 				*inst.InstanceId,
 				publicIP,
-				*inst.PrivateIpAddress,
+				privateIP,
 				*inst.InstanceType,
 				workingVersion,
 				service,
