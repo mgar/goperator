@@ -9,8 +9,9 @@ import (
 	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	client "github.com/mgar/goperator/client/aws"
+	ec2_service "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/mgar/goperator/aws/ec2"
+	"github.com/mgar/goperator/client"
 	"github.com/mgar/goperator/formatter"
 	"github.com/spf13/cobra"
 )
@@ -60,9 +61,11 @@ func listInstances(cmd *cobra.Command, args []string) {
 	}
 	environment, component := args[0], args[1]
 
-	params := &ec2.DescribeInstancesInput{
+	instances := []ec2.Ec2Instance{}
+
+	params := &ec2_service.DescribeInstancesInput{
 		DryRun: aws.Bool(false),
-		Filters: []*ec2.Filter{
+		Filters: []*ec2_service.Filter{
 			{
 				Name: aws.String("tag:component"),
 				Values: []*string{
@@ -88,8 +91,17 @@ func listInstances(cmd *cobra.Command, args []string) {
 	}
 
 	if resp.Reservations != nil {
-		formatter.Ec2ToTable(resp)
+		for _, res := range resp.Reservations {
+			instance, err := ec2.NewEc2Instance(res.Instances[0])
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(1)
+			}
+			instances = append(instances, *instance)
+		}
 	}
+
+	formatter.Ec2ToTable(instances)
 }
 
 func sshInstance(cmd *cobra.Command, args []string) {
@@ -99,11 +111,10 @@ func sshInstance(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	instanceID := args[0]
-	var component, environment, IP string
 
-	params := &ec2.DescribeInstancesInput{
+	params := &ec2_service.DescribeInstancesInput{
 		DryRun: aws.Bool(false),
-		Filters: []*ec2.Filter{
+		Filters: []*ec2_service.Filter{
 			{
 				Name:   aws.String("instance-state-name"),
 				Values: []*string{aws.String("running"), aws.String("stopped")},
@@ -120,23 +131,11 @@ func sshInstance(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	inst := resp.Reservations[0].Instances
-	for _, inst := range inst {
-		for _, keys := range inst.Tags {
-			switch tag := *keys.Key; tag {
-			case "component":
-				component = *keys.Value
-			case "environment":
-				environment = *keys.Value
-			}
-		}
-		if inst.PublicIpAddress != nil {
-			IP = *inst.PublicIpAddress
-		} else {
-			IP = *inst.PrivateIpAddress
-		}
+	instance, err := ec2.NewEc2Instance(resp.Reservations[0].Instances[0])
+	if err != nil {
+
 	}
-	err = connectSSH(environment, component, IP)
+	err = connectSSH(instance)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -151,7 +150,7 @@ func stopInstance(cmd *cobra.Command, args []string) {
 
 	instances := stringsSliceToStringPointersSlice(args)
 
-	params := &ec2.StopInstancesInput{
+	params := &ec2_service.StopInstancesInput{
 		DryRun:      aws.Bool(false),
 		InstanceIds: instances,
 	}
@@ -178,7 +177,7 @@ func startInstance(cmd *cobra.Command, args []string) {
 
 	instances := stringsSliceToStringPointersSlice(args)
 
-	params := &ec2.StartInstancesInput{
+	params := &ec2_service.StartInstancesInput{
 		DryRun:      aws.Bool(false),
 		InstanceIds: instances,
 	}
@@ -203,23 +202,21 @@ func executeCommand(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var component, environment, IP string
-
 	command := args[len(args)-1]
 	args = args[:len(args)-1]
 
-	instances := stringsSliceToStringPointersSlice(args)
+	instancesList := stringsSliceToStringPointersSlice(args)
 
-	params := &ec2.DescribeInstancesInput{
+	params := &ec2_service.DescribeInstancesInput{
 		DryRun: aws.Bool(false),
-		Filters: []*ec2.Filter{
+		Filters: []*ec2_service.Filter{
 			{
 				Name:   aws.String("instance-state-name"),
 				Values: []*string{aws.String("running")},
 			},
 			{
 				Name:   aws.String("instance-id"),
-				Values: instances,
+				Values: instancesList,
 			},
 		},
 	}
@@ -229,34 +226,30 @@ func executeCommand(cmd *cobra.Command, args []string) {
 		fmt.Println(err.Error())
 	}
 
-	fmt.Printf("COMMAND: [%s] ********************************\n", command)
+	instances := []ec2.Ec2Instance{}
 
-	for idx := range resp.Reservations {
-		for _, inst := range resp.Reservations[idx].Instances {
-			for _, keys := range inst.Tags {
-				switch tag := *keys.Key; tag {
-				case "component":
-					component = *keys.Value
-				case "environment":
-					environment = *keys.Value
-				}
-			}
-			if inst.PublicIpAddress != nil {
-				IP = *inst.PublicIpAddress
-			} else {
-				IP = *inst.PrivateIpAddress
-			}
-
-			err := runCommand(*inst.InstanceId, component, environment, IP, command)
+	if resp.Reservations != nil {
+		for _, res := range resp.Reservations {
+			instance, err := ec2.NewEc2Instance(res.Instances[0])
 			if err != nil {
 				fmt.Println(err.Error())
+				os.Exit(1)
 			}
+			instances = append(instances, *instance)
 		}
+	}
 
+	fmt.Printf("COMMAND: [%s] ********************************\n", command)
+
+	for _, instance := range instances {
+		err := runCommand(&instance, command)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	}
 }
 
-func runCommand(instanceID, component, environment, IP, command string) error {
+func runCommand(inst *ec2.Ec2Instance, command string) error {
 
 	_, lookErr := exec.LookPath("ssh")
 	if lookErr != nil {
@@ -272,10 +265,10 @@ func runCommand(instanceID, component, environment, IP, command string) error {
 	cmd := exec.Command(
 		"ssh",
 		"-i",
-		fmt.Sprintf("%s/%s-%s.pem", path, environment, component),
+		fmt.Sprintf("%s/%s.pem", path, inst.Key),
 		"-l",
 		"ec2-user",
-		IP,
+		inst.PublicIP,
 		command)
 
 	out, err := cmd.CombinedOutput()
@@ -284,12 +277,12 @@ func runCommand(instanceID, component, environment, IP, command string) error {
 		return err
 	}
 
-	fmt.Printf("%s:\n %s\n", instanceID, out)
+	fmt.Printf("%s:\n %s\n", inst.InstanceID, out)
 
 	return nil
 }
 
-func connectSSH(environment, component, IP string) error {
+func connectSSH(instance *ec2.Ec2Instance) error {
 
 	path, err := filepath.Abs(filepath.Join("./ssh-keys"))
 	if err != nil {
@@ -302,7 +295,7 @@ func connectSSH(environment, component, IP string) error {
 		return lookErr
 	}
 
-	args := []string{"ssh", "-i", fmt.Sprintf("%s/%s-%s.pem", path, environment, component), "-l", "ec2-user", IP}
+	args := []string{"ssh", "-i", fmt.Sprintf("%s/%s.pem", path, instance.Key), "-l", "ec2-user", instance.PublicIP}
 	env := os.Environ()
 
 	execErr := syscall.Exec(binary, args, env)
