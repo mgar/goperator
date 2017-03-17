@@ -1,6 +1,3 @@
-# goperator
-
-goperator is a CLI tool to manage your AWS infrastructure.
 
 ## Installation
 
@@ -12,7 +9,7 @@ You can install the lastest version of the source code and running:
 
 ## Tags
 
-To run goperator is very important that all your EC2 instances have the following tags:
+If you want to list your instances or access them using SSH, instances must have the following tags:
 
 - *component*
 - *environment*
@@ -28,3 +25,9 @@ Set some environment variables if you want to override the current ones:
 ```Bash
 export AWS_REGION=us-west-2
 ```
+
+- `start` Start one or many instances which are currently stopped
+- `stop` Stop one or many instances which are currently started
+- `terminate` Terminate one or many instances
+- `list` List instances based on its tags [environment] and [component]
+- `command` Execute a command on one or many instances
