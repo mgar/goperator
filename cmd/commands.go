@@ -14,6 +14,7 @@ func Run() {
 	cli.AddCommand(execCommandInInstance)
 	cli.AddCommand(cmdStopInstance)
 	cli.AddCommand(cmdStartInstance)
+	cli.AddCommand(cmdTerminateInstance)
 
 	cli.Execute()
 }

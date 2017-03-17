@@ -32,6 +32,13 @@ var cmdSSHInstance = &cobra.Command{
 	Run:   sshInstance,
 }
 
+var cmdTerminateInstance = &cobra.Command{
+	Use:   "terminate [instance-id]",
+	Long:  "Terminate one or more EC2 instances given [instance-id ...]",
+	Short: "Terminate one or many EC2 instances",
+	Run:   terminateInstance,
+}
+
 var cmdStopInstance = &cobra.Command{
 	Use:   "stop [instance-id]",
 	Long:  "Stop one or more EC2 instances given [instance-id ...]",
@@ -142,6 +149,23 @@ func sshInstance(cmd *cobra.Command, args []string) {
 	}
 }
 
+func terminateInstance(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		fmt.Println("You need to specify [instance-id ...]")
+		os.Exit(1)
+	}
+	instances := stringsSliceToStringPointersSlice(args)
+
+	params := &ec2_service.TerminateInstancesInput{
+		DryRun:      aws.Bool(false),
+		InstanceIds: instances,
+	}
+	_, err := ec2Client.TerminateInstances(params)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
 func stopInstance(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
 		fmt.Println("You need to specify [instance-id ...]")
@@ -162,7 +186,7 @@ func stopInstance(cmd *cobra.Command, args []string) {
 
 	for idx := range resp.StoppingInstances {
 		if *resp.StoppingInstances[idx].PreviousState.Name != "running" {
-			fmt.Printf("Instance %s in not running. It can't be stopped.\n", *resp.StoppingInstances[idx].InstanceId)
+			fmt.Printf("Instance %s is not running. It can't be stopped.\n", *resp.StoppingInstances[idx].InstanceId)
 		} else {
 			fmt.Printf("Stopping instance: %s\n", *resp.StoppingInstances[idx].InstanceId)
 		}
