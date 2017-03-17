@@ -26,6 +26,8 @@ Set some environment variables if you want to override the current ones:
 export AWS_REGION=us-west-2
 ```
 
+![](https://github.com/mgar/goperator/blob/master/doc/demo.gif)
+
 - `start` Start one or many instances which are currently stopped
 - `stop` Stop one or many instances which are currently started
 - `terminate` Terminate one or many instances
