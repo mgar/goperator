@@ -17,13 +17,18 @@ type Ec2Instance struct {
 }
 
 func NewEc2Instance(res *ec2_service.Instance) (*Ec2Instance, error) {
+
 	instance := &Ec2Instance{
 		InstanceID:   *res.InstanceId,
 		State:        *res.State.Name,
 		Key:          *res.KeyName,
-		PrivateIP:    *res.PrivateIpAddress,
 		InstanceType: *res.InstanceType,
 	}
+
+	if res.PrivateIpAddress != nil {
+		instance.PrivateIP = *res.PrivateIpAddress
+	}
+
 	if res.PublicIpAddress != nil {
 		instance.PublicIP = *res.PublicIpAddress
 	}
