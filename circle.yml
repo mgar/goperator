@@ -8,5 +8,5 @@ dependencies:
 
 test:
   override:
-    - >-
-      go tool vet -all -shadowstrict . 2>&1 | ./reviewdog -f=govet -ci="circle-ci"
+    - make tests
+    - go tool vet -all -shadowstrict . 2>&1 | ./reviewdog -f=govet -ci="circle-ci"
