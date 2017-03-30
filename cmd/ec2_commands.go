@@ -66,13 +66,40 @@ func listInstances(cmd *cobra.Command, args []string) {
 		fmt.Println("You need to specify [environment] and [component]")
 		os.Exit(1)
 	}
+
+	service := cmd.Flag("service").Value.String()
 	environment, component := args[0], args[1]
-
 	instances := []ec2.Ec2Instance{}
+	filter := []*ec2_service.Filter{}
 
-	params := &ec2_service.DescribeInstancesInput{
-		DryRun: aws.Bool(false),
-		Filters: []*ec2_service.Filter{
+	if service != "" {
+		filter = []*ec2_service.Filter{
+			{
+				Name: aws.String("tag:component"),
+				Values: []*string{
+					aws.String(component),
+				},
+			},
+			{
+				Name: aws.String("tag:environment"),
+				Values: []*string{
+					aws.String(environment),
+				},
+			},
+			{
+				Name: aws.String("tag:service"),
+				Values: []*string{
+					aws.String(service),
+				},
+			},
+			{
+				Name: aws.String("instance-state-name"),
+				Values: []*string{aws.String("running"), aws.String("stopped"), aws.String("shutting-down"),
+					aws.String("stopping"), aws.String("pending")},
+			},
+		}
+	} else {
+		filter = []*ec2_service.Filter{
 			{
 				Name: aws.String("tag:component"),
 				Values: []*string{
@@ -90,8 +117,14 @@ func listInstances(cmd *cobra.Command, args []string) {
 				Values: []*string{aws.String("running"), aws.String("stopped"), aws.String("shutting-down"),
 					aws.String("stopping"), aws.String("pending")},
 			},
-		},
+		}
 	}
+
+	params := &ec2_service.DescribeInstancesInput{
+		DryRun:  aws.Bool(false),
+		Filters: filter,
+	}
+
 	resp, err := ec2Client.DescribeInstances(params)
 	if err != nil {
 		fmt.Println(err.Error())
