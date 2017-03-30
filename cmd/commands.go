@@ -9,6 +9,11 @@ var cli = &cobra.Command{
 
 // Run : RootCommand
 func Run() {
+
+	var serviceName string
+
+	cmdListInstances.Flags().StringVarP(&serviceName, "service", "s", "", "Filter by service name")
+
 	cli.AddCommand(cmdListInstances)
 	cli.AddCommand(cmdSSHInstance)
 	cli.AddCommand(execCommandInInstance)
