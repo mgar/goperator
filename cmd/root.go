@@ -29,7 +29,7 @@ var RootCmd = &cobra.Command{
 without having to deal with the Console or the aws Python CLI`,
 }
 
-func Execute() {
+func Run() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
