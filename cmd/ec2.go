@@ -1,3 +1,17 @@
+// Copyright © 2017 Miguel Ángel García <mgarcia.inf@gmail.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cmd
 
 import (
@@ -18,6 +32,7 @@ import (
 
 var ec2Client = client.NewEc2Client()
 
+// listCmd represents the list command
 var cmdListInstances = &cobra.Command{
 	Use:   "list [environment] [component]",
 	Long:  "List EC2 instances based on [environment] and [component] tags",
@@ -58,6 +73,34 @@ var execCommandInInstance = &cobra.Command{
 	Long:  "Execute a command on one or a given number of EC2 instances given [instance-id ...]",
 	Short: "Execute a command on one or many EC2 instances",
 	Run:   executeCommand,
+}
+
+// ec2Cmd represents the ec2 command
+var ec2Cmd = &cobra.Command{
+	Use:   "ec2",
+	Short: "Manage Ec2 resources",
+}
+
+func init() {
+	RootCmd.AddCommand(ec2Cmd)
+	ec2Cmd.AddCommand(cmdListInstances)
+	ec2Cmd.AddCommand(cmdSSHInstance)
+	ec2Cmd.AddCommand(cmdTerminateInstance)
+	ec2Cmd.AddCommand(cmdStopInstance)
+	ec2Cmd.AddCommand(cmdStartInstance)
+	ec2Cmd.AddCommand(execCommandInInstance)
+
+	// Here you will define your flags and configuration settings.
+	var serviceName string
+	cmdListInstances.Flags().StringVarP(&serviceName, "service", "s", "", "Filter by service name")
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// ec2Cmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// ec2Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
 }
 
 func listInstances(cmd *cobra.Command, args []string) {
